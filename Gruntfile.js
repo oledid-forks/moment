@@ -109,6 +109,7 @@ module.exports = function (grunt) {
                 }
             },
             options: {
+                sourceMap: true,
                 mangle: true,
                 compress: {
                     dead_code: false // jshint ignore:line
@@ -153,9 +154,12 @@ module.exports = function (grunt) {
             }
         },
         benchmark: {
-            all: {
-                src: ['benchmarks/*.js']
-            }
+            compare: {src: ['benchmarks/compare.js']},
+            startOf: {src: ['benchmarks/startOf.js']},
+            endOf: {src: ['benchmarks/endOf.js']},
+            get: {src: ['benchmarks/get.js']},
+            set: {src: ['benchmarks/set.js']},
+            all: {src: ['benchmarks/*.js']}
         },
         exec: {
             'meteor-init': {
@@ -194,7 +198,7 @@ module.exports = function (grunt) {
     grunt.registerTask('lint', ['jshint', 'jscs']);
 
     // test tasks
-    grunt.registerTask('test', ['test:node', 'test:typescript', 'test:typescript-3.1']);
+    grunt.registerTask('test', ['test:node', 'test:typescript' /*, 'test:typescript-3.1' */]);
     grunt.registerTask('test:node', ['transpile', 'qtest']);
     grunt.registerTask('test:typescript', ['exec:typescript-test']);
     grunt.registerTask('test:typescript-3.1', ['exec:ts3.1-typescript-test']);

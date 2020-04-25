@@ -1,4 +1,5 @@
 import { module, test } from '../qunit';
+import eachOwnProp from '../helpers/each-own-prop';
 import moment from '../../moment';
 
 module('create');
@@ -429,6 +430,11 @@ test('string with array of formats + ISO', function (assert) {
     assert.equal(moment('2014-05-05', ['YYYY-MM-DD', moment.ISO_8601]).parsingFlags().iso, false, 'iso: edge case array precedence not iso');
 });
 
+test('strict parsing invalid date against array of formats', function (assert) {
+    var b = moment('2/30/2019 7:00pm', ['M/DD/YYYY h:mma", "MM/DD/YYYY h:mma", "M-D-YYYY h:mma", "MM-D-YYYY h:mma'], true);
+    assert.deepEqual(b.parsingFlags().parsedDateParts, [2019,1,30,7,0], 'strict parsing multiple formats should still select the best format even if the date is invalid');
+});
+
 test('string with format - years', function (assert) {
     assert.equal(moment('67', 'YY').format('YYYY'), '2067', '67 > 2067');
     assert.equal(moment('68', 'YY').format('YYYY'), '2068', '68 > 2068');
@@ -483,17 +489,15 @@ test('parsing RFC 2822', function (assert) {
         'Mon, 02 Jan 2017 06:00:00 EDT': [2017, 0, 2, 6, 0, 0, -4 * 60]
     };
 
-    var inp, tokens, parseResult, expResult;
-
-    for (inp in testCases) {
-        tokens = testCases[inp];
-        parseResult = moment(inp, moment.RFC_2822, true).parseZone();
-        expResult = moment.utc(tokens.slice(0, 6)).utcOffset(tokens[6], true);
+    eachOwnProp(testCases, function (inp) {
+        var tokens = testCases[inp],
+            parseResult = moment(inp, moment.RFC_2822, true).parseZone(),
+            expResult = moment.utc(tokens.slice(0, 6)).utcOffset(tokens[6], true);
         assert.ok(parseResult.isValid(), inp);
         assert.ok(parseResult.parsingFlags().rfc2822, inp + ' - rfc2822 parsingFlag');
         assert.equal(parseResult.utcOffset(), expResult.utcOffset(), inp + ' - zone');
         assert.equal(parseResult.valueOf(), expResult.valueOf(), inp + ' - correctness');
-    }
+    });
 });
 
 test('non RFC 2822 strings', function (assert) {
@@ -501,13 +505,12 @@ test('non RFC 2822 strings', function (assert) {
         'RFC2822 datetime with all options but invalid day delimiter': 'Tue. 01 Nov 2016 01:23:45 GMT',
         'RFC2822 datetime with mismatching Day (weekday v date)': 'Mon, 01 Nov 2016 01:23:45 GMT'
     };
-    var testCase;
 
-    for (testCase in testCases) {
+    eachOwnProp(testCases, function (testCase) {
         var testResult = moment(testCases[testCase], moment.RFC_2822, true);
         assert.ok(!testResult.isValid(), testCase + ': ' + testResult + ' - is invalid rfc2822');
         assert.ok(!testResult.parsingFlags().rfc2822, testCase + ': ' + testResult + ' - rfc2822 parsingFlag');
-    }
+    });
 });
 
 test('parsing RFC 2822 in a different locale', function (assert) {
@@ -520,15 +523,14 @@ test('parsing RFC 2822 in a different locale', function (assert) {
         'clean RFC2822 datetime with single-digit day-of-month': 'Tue, 1 Nov 2016 06:23:45 GMT',
         'RFC2822 datetime with CFWSs': '(Init Comment) Tue,\n 1 Nov              2016 (Split\n Comment)  07:23:45 +0000 (GMT)'
     };
-    var testCase;
 
     try {
         moment.locale('ru');
-        for (testCase in testCases) {
+        eachOwnProp(testCases, function (testCase) {
             var testResult = moment(testCases[testCase], moment.RFC_2822, true);
             assert.ok(testResult.isValid(), testResult);
             assert.ok(testResult.parsingFlags().rfc2822, testResult + ' - rfc2822 parsingFlag');
-        }
+        });
     }
     finally {
         moment.locale('en');
@@ -540,15 +542,14 @@ test('non RFC 2822 strings in a different locale', function (assert) {
         'RFC2822 datetime with all options but invalid day delimiter': 'Tue. 01 Nov 2016 01:23:45 GMT',
         'RFC2822 datetime with mismatching Day (week v date)': 'Mon, 01 Nov 2016 01:23:45 GMT'
     };
-    var testCase;
 
     try {
         moment.locale('ru');
-        for (testCase in testCases) {
+        eachOwnProp(testCases, function (testCase) {
             var testResult = moment(testCases[testCase], moment.RFC_2822, true);
             assert.ok(!testResult.isValid(), testResult);
             assert.ok(!testResult.parsingFlags().rfc2822, testResult + ' - rfc2822 parsingFlag');
-        }
+        });
     }
     finally {
         moment.locale('en');
