@@ -1,33 +1,30 @@
 import { createDuration } from './create';
 
 var round = Math.round;
-
 var thresholds = {
     ss: 44,         // a few seconds to seconds
     s : 45,         // seconds to minute
     m : 45,         // minutes to hour
     h : 22,         // hours to day
-    d : 26,         // days to week/month
-    w : 4,          // weeks to months
+    d : 26,         // days to month/week
+    w : null,       // weeks to month
     M : 11          // months to year
 };
-
-var includeWeeks = false;
 
 // helper function for moment.fn.from, moment.fn.fromNow, and moment.duration.fn.humanize
 function substituteTimeAgo(string, number, withoutSuffix, isFuture, locale) {
     return locale.relativeTime(number || 1, !!withoutSuffix, string, isFuture);
 }
 
-function relativeTime (posNegDuration, withoutSuffix, locale) {
-    var duration   = createDuration(posNegDuration).abs();
-    var seconds    = round(duration.as('s'));
-    var minutes    = round(duration.as('m'));
-    var hours      = round(duration.as('h'));
-    var days       = round(duration.as('d'));
-    var weeks      = round(duration.as('w'));
-    var months     = round(duration.as('M'));
-    var years      = round(duration.as('y'));
+function relativeTime (posNegDuration, withoutSuffix, thresholds, locale) {
+    var duration = createDuration(posNegDuration).abs();
+    var seconds  = round(duration.as('s'));
+    var minutes  = round(duration.as('m'));
+    var hours    = round(duration.as('h'));
+    var days     = round(duration.as('d'));
+    var months   = round(duration.as('M'));
+    var weeks    = round(duration.as('w'));
+    var years    = round(duration.as('y'));
 
     var a = seconds <= thresholds.ss && ['s', seconds]  ||
             seconds < thresholds.s   && ['ss', seconds] ||
@@ -38,13 +35,15 @@ function relativeTime (posNegDuration, withoutSuffix, locale) {
             days    <= 1             && ['d']           ||
             days    < thresholds.d   && ['dd', days];
 
-    if (includeWeeks) {
-        a = a || weeks <= 1             && ['w']         ||
-                 weeks < thresholds.w   && ['ww', weeks];
+    if (thresholds.w != null) {
+        a = a ||
+            weeks   <= 1             && ['w']           ||
+            weeks   < thresholds.w   && ['ww', weeks];
     }
-    a = a || months  <= 1             && ['M']           ||
-             months  < thresholds.M   && ['MM', months]  ||
-             years   <= 1             && ['y']           || ['yy', years];
+    a = a ||
+            months  <= 1             && ['M']           ||
+            months  < thresholds.M   && ['MM', months]  ||
+            years   <= 1             && ['y']           || ['yy', years];
 
     a[2] = withoutSuffix;
     a[3] = +posNegDuration > 0;
@@ -78,31 +77,36 @@ export function getSetRelativeTimeThreshold (threshold, limit) {
     }
     return true;
 }
-export function getSetRelativeTimeIncludeWeeks(setIncludeWeeks) {
-    if (setIncludeWeeks === undefined) {
-        return includeWeeks;
-    }
-    if (typeof setIncludeWeeks !== 'boolean') {
-        return false;
-    }
-    includeWeeks = setIncludeWeeks;
-    if (includeWeeks === true) {
-        thresholds.w = 4;
-        thresholds.d = 7;
-    }
-    if (includeWeeks === false) {
-        delete thresholds.w;
-        thresholds.d = 26;
-    }
-    return true;
-}
-export function humanize (withSuffix, includeWeeks) {
+
+export function humanize (withSuffixOrOptions) {
     if (!this.isValid()) {
         return this.localeData().invalidDate();
     }
 
+    var withSuffix = false;
+    var th = thresholds;
+
+    if (typeof withSuffixOrOptions === 'boolean') {
+        withSuffix = withSuffixOrOptions;
+    }
+    else if (typeof withSuffixOrOptions === 'object') {
+        var ws = withSuffixOrOptions.withSuffix;
+        if (typeof ws === 'boolean') {
+            withSuffix = ws;
+        }
+
+        var t = withSuffixOrOptions.thresholds;
+        if (typeof t === 'object') {
+            // Fill in missing keys with the current values
+            th = Object.assign({}, thresholds, t);
+            if (typeof t.s === 'number') {
+                th.ss = t.s - 1;
+            }
+        }
+    }
+
     var locale = this.localeData();
-    var output = relativeTime(this, !withSuffix, locale);
+    var output = relativeTime(this, !withSuffix, th, locale);
 
     if (withSuffix) {
         output = locale.pastFuture(+this, output);

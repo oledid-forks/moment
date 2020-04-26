@@ -80,10 +80,12 @@ test('default thresholds toNow', function (assert) {
 });
 
 test('custom thresholds', function (assert) {
-    var a;
+    var a, dd;
 
     // including weeks
-    moment.relativeTimeIncludeWeeks(true);
+    moment.relativeTimeThreshold('w', 4);
+    dd = moment.relativeTimeThreshold('d');
+    moment.relativeTimeThreshold('d', 7);
     // threshold for days to weeks with including weeks
     a = moment();
     a.subtract(6, 'days');
@@ -97,8 +99,9 @@ test('custom thresholds', function (assert) {
     assert.equal(a.fromNow(), '3 weeks ago', 'Below threshold weeks for months');
     a.subtract(1, 'week');
     assert.equal(a.fromNow(), 'a month ago', 'Above threshold weeks for months');
-    moment.relativeTimeIncludeWeeks(false);
-    assert.equal(moment.relativeTimeIncludeWeeks(), false);
+    // moment.relativeTimeIncludeWeeks(false);
+    moment.relativeTimeThreshold('w', null);
+    moment.relativeTimeThreshold('d', dd);
     // Seconds to minute threshold, under 30
     moment.relativeTimeThreshold('s', 25);
 
