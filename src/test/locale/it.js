@@ -15,6 +15,14 @@ test('parse', function (assert) {
             input + ' should be month ' + (i + 1)
         );
     }
+    function equalTestStrict(input, mmm, monthIndex) {
+        assert.equal(
+            moment(input, mmm, true).month(),
+            monthIndex,
+            input + ' ' + mmm + ' should be strict month ' + (monthIndex + 1)
+        );
+    }
+
     for (i = 0; i < 12; i++) {
         tests[i] = tests[i].split(' ');
         equalTest(tests[i][0], 'MMM', i);
@@ -25,6 +33,13 @@ test('parse', function (assert) {
         equalTest(tests[i][1].toLocaleLowerCase(), 'MMMM', i);
         equalTest(tests[i][0].toLocaleUpperCase(), 'MMMM', i);
         equalTest(tests[i][1].toLocaleUpperCase(), 'MMMM', i);
+
+        equalTestStrict(tests[i][1], 'MMM', i);
+        equalTestStrict(tests[i][0], 'MMMM', i);
+        equalTestStrict(tests[i][1].toLocaleLowerCase(), 'MMM', i);
+        equalTestStrict(tests[i][1].toLocaleUpperCase(), 'MMM', i);
+        equalTestStrict(tests[i][0].toLocaleLowerCase(), 'MMMM', i);
+        equalTestStrict(tests[i][0].toLocaleUpperCase(), 'MMMM', i);
     }
 });
 
@@ -311,6 +326,11 @@ test('calendar day', function (assert) {
         'tomorrow at the same time'
     );
     assert.equal(
+        moment(a).add({ d: 1, h: -1 }).calendar(),
+        'Domani alle 11:00',
+        'tomorrow minus 1 hour'
+    );
+    assert.equal(
         moment(a).subtract({ h: 1 }).calendar(),
         'Oggi alle 11:00',
         'Now minus 1 hour'
@@ -328,19 +348,31 @@ test('calendar next week', function (assert) {
         m = moment().add({ d: i });
         assert.equal(
             m.calendar(),
-            m.format('dddd [alle] LT'),
+            m.format(
+                'dddd [a' +
+                    (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                    ']LT'
+            ),
             'Today + ' + i + ' days current time'
         );
         m.hours(0).minutes(0).seconds(0).milliseconds(0);
         assert.equal(
             m.calendar(),
-            m.format('dddd [alle] LT'),
+            m.format(
+                'dddd [a' +
+                    (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                    ']LT'
+            ),
             'Today + ' + i + ' days beginning of day'
         );
         m.hours(23).minutes(59).seconds(59).milliseconds(999);
         assert.equal(
             m.calendar(),
-            m.format('dddd [alle] LT'),
+            m.format(
+                'dddd [a' +
+                    (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                    ']LT'
+            ),
             'Today + ' + i + ' days end of day'
         );
     }
@@ -354,20 +386,40 @@ test('calendar last week', function (assert) {
         weekday = parseInt(m.format('d'), 10);
         datestring =
             weekday === 0
-                ? '[la scorsa] dddd [alle] LT'
-                : '[lo scorso] dddd [alle] LT';
+                ? '[La scorsa] dddd [a' +
+                  (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                  ']LT'
+                : '[Lo scorso] dddd [a' +
+                  (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                  ']LT';
         assert.equal(
             m.calendar(),
             m.format(datestring),
             'Today - ' + i + ' days current time'
         );
         m.hours(0).minutes(0).seconds(0).milliseconds(0);
+        datestring =
+            weekday === 0
+                ? '[La scorsa] dddd [a' +
+                  (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                  ']LT'
+                : '[Lo scorso] dddd [a' +
+                  (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                  ']LT';
         assert.equal(
             m.calendar(),
             m.format(datestring),
             'Today - ' + i + ' days beginning of day'
         );
         m.hours(23).minutes(59).seconds(59).milliseconds(999);
+        datestring =
+            weekday === 0
+                ? '[La scorsa] dddd [a' +
+                  (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                  ']LT'
+                : '[Lo scorso] dddd [a' +
+                  (m.hours() > 1 ? 'lle ' : m.hours() === 0 ? ' ' : "ll'") +
+                  ']LT';
         assert.equal(
             m.calendar(),
             m.format(datestring),
